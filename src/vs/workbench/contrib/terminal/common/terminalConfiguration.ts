@@ -122,9 +122,9 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 			localize('terminal.integrated.defaultLocation.editor', "Create terminals in the editor"),
 			localize('terminal.integrated.defaultLocation.view', "Create terminals in the terminal view")
 		],
-		default: 'view',
+		default: 'editor',
 		description: localize('terminal.integrated.defaultLocation', "Controls where newly created terminals will appear."),
-		agentsWindow: { default: 'view', readOnly: true },
+		agentsWindow: { default: 'editor', readOnly: true },
 	},
 	[TerminalSettingId.TabsFocusMode]: {
 		type: 'string',

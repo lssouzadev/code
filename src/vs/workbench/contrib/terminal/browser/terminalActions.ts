@@ -26,6 +26,7 @@ import { AccessibleViewProviderId } from '../../../../platform/accessibility/bro
 import { CONTEXT_ACCESSIBILITY_MODE_ENABLED } from '../../../../platform/accessibility/common/accessibility.js';
 import { Action2, IAction2Options, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
 import { FileKind } from '../../../../platform/files/common/files.js';
@@ -1526,6 +1527,42 @@ function convertOptionsOrProfileToOptions(optionsOrProfile?: ICreateTerminalOpti
 }
 
 let newWithProfileAction: IDisposable;
+
+
+registerTerminalAction({
+	id: TerminalCommandId.Cut,
+	title: localize2('workbench.action.terminal.cut', 'Cut Selection'),
+	precondition: TerminalContextKeys.focus,
+	run: async (c, accessor) => {
+		const clipboardService = accessor.get(IClipboardService);
+		const terminalService = c.service;
+		if (terminalService.activeInstance) {
+			const text = await terminalService.activeInstance.getSelection();
+			if (text) {
+				await clipboardService.writeText(text);
+				terminalService.activeInstance.clearSelection();
+                // To delete the text (simulating cut), we would send backspaces or delete keys
+                // but this depends heavily on the shell. As requested, we just need to bind Cmd+X to a "Cut" equivalent that clears the screen selection.
+                // Usually sending a backspace to delete the selected part in the prompt:
+				// terminalService.activeInstance.sendText('\x08'.repeat(text.length), false); // This is basic, a true cut would need shell integration aware of cursor position.
+			}
+		}
+	}
+});
+
+
+registerTerminalAction({
+	id: 'workbench.action.terminal.undo',
+	title: localize2('workbench.action.terminal.undo', 'Undo'),
+	precondition: TerminalContextKeys.focus,
+	run: async (c) => {
+		const terminalService = c.service;
+		if (terminalService.activeInstance) {
+            // Send the standard escape sequence for undo (Ctrl+_) in many shells
+			terminalService.activeInstance.sendText('\x1F', false);
+		}
+	}
+});
 
 export function refreshTerminalActions(detectedProfiles: ITerminalProfile[]): IDisposable {
 	const profileEnum = createProfileSchemaEnums(detectedProfiles);
